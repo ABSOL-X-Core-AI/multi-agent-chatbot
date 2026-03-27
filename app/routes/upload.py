@@ -15,5 +15,4 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
     finally:
         await file.close()
-
     return {"message": "File uploaded successfully", **result}

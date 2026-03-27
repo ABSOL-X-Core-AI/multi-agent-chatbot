@@ -18,20 +18,16 @@ model = SentenceTransformer(
 )
 
 model.eval()
-EMBED_DIM = model.get_sentence_embedding_dimension()
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    return model.encode(texts, normalize_embeddings=True).tolist()
+    with torch.no_grad():
+        return model.encode(texts, normalize_embeddings=True).tolist()
 
 
 def embed_query(query: str) -> list[float]:
     task = "Given a user query, retrieve relevant document passages"
-    return model.encode(
-        query, prompt=f"Instruct: {task}\nQuery:", normalize_embeddings=True
-    ).tolist()
-
-
-print(f"Device      : {next(model.parameters()).device}")
-print(f"Embed dim   : {EMBED_DIM}")
-print(f"Model saved : {os.path.abspath(MODEL_DIR)}")
+    with torch.no_grad():
+        return model.encode(
+            query, prompt=f"Instruct: {task}\nQuery:", normalize_embeddings=True
+        ).tolist()
