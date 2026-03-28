@@ -9,8 +9,8 @@ ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx"}
 
 
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=512,
-    chunk_overlap=64,
+    chunk_size=768,
+    chunk_overlap=100,
     separators=["\n\n", "\n", ".", " ", ""],
 )
 
@@ -37,13 +37,14 @@ def extract_text(filename: str, content: bytes) -> str:
             import pypdf
 
             reader = pypdf.PdfReader(io.BytesIO(content))
-            return "\n".join(page.extract_text() or "" for page in reader.pages)
+            pages = [page.extract_text() or "" for page in reader.pages]
+            return "\n\n".join(p.strip() for p in pages if p.strip())
 
         elif ext == ".docx":
             import docx
 
             doc = docx.Document(io.BytesIO(content))
-            return "\n".join(para.text for para in doc.paragraphs)
+            return "\n\n".join(p.text.strip() for p in doc.paragraphs if p.text.strip())
 
         else:
             # fallback for unknown types
@@ -57,4 +58,4 @@ def extract_text(filename: str, content: bytes) -> str:
 def chunk_text(text: str) -> list[str]:
     # Split text into overlapping chunks.
     chunks = splitter.split_text(text)
-    return [c.strip() for c in chunks if len(c.strip()) > 0]
+    return [" ".join(c.split()) for c in chunks if len(c.strip()) > 0]

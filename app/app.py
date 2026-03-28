@@ -1,6 +1,7 @@
 import logging
 from fastapi import FastAPI
 from .routes import upload
+from .routes import search
 from contextlib import asynccontextmanager
 from .services.database import get_pool, close_pool
 
@@ -25,6 +26,7 @@ app = FastAPI(
 )
 
 app.include_router(upload.router, prefix="/chatbot/v1", tags=["upload"])
+app.include_router(search.router, prefix="/chatbot/v1", tags=["search"])
 
 
 @app.get("/health", tags=["health"])

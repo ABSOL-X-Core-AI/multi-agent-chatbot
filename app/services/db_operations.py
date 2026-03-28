@@ -31,3 +31,37 @@ async def save_document_chunks(
 
     logger.info(f"Saved {len(rows)} chunks for '{filename}'")
     return len(rows)
+
+
+async def search_similar_chunks(
+    query_embedding: list[float],
+    k: int = 5,
+) -> list[dict]:
+    # Find top-k most similar chunks to the query embedding.
+    pool = await get_pool()
+
+    # pgvector's <-> operator = cosine distance
+    # 1 - cosine distance = cosine similarity
+    query = """
+        SELECT
+            filename,
+            chunk_index,
+            content,
+            1 - (embedding <=> $1::vector) AS similarity
+        FROM documents
+        ORDER BY embedding <=> $1::vector
+        LIMIT $2
+    """
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(query, str(query_embedding), k)
+
+    return [
+        {
+            "filename": row["filename"],
+            "chunk_index": row["chunk_index"],
+            "content": row["content"].replace("\n", " ").strip(),
+            "similarity": round(float(row["similarity"]), 4),
+        }
+        for row in rows
+    ]
