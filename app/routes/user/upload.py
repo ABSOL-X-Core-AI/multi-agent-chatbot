@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from app.services.file_saving import save_file
+from app.services.file_upload.file_saving import save_file
 
 router = APIRouter()
 

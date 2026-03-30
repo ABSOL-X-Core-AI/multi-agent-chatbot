@@ -1,5 +1,7 @@
 import logging
-from app.services.database import get_pool
+from sqlalchemy import delete, text
+from app.services.db_services.models import Document
+from app.services.db_services.database import AsyncSessionLocal
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -10,24 +12,21 @@ async def save_document_chunks(
     embeddings: list[list[float]],
 ) -> int:
     # Save all chunks and embeddings to pgvector.
-    pool = await get_pool()
 
     rows = [
-        (filename, i, chunk, str(embedding))
+        Document(
+            filename=filename,
+            chunk_index=i,
+            content=chunk,
+            embedding=embedding,
+        )
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
     ]
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            await conn.execute("DELETE FROM documents WHERE filename = $1", filename)
-
-            await conn.executemany(
-                """
-                INSERT INTO documents (filename, chunk_index, content, embedding)
-                VALUES ($1, $2, $3, $4::vector)
-                """,
-                rows,
-            )
+    async with AsyncSessionLocal() as session:
+        async with session.begin():
+            await session.execute(delete(Document).where(Document.filename == filename))
+            session.add_all(rows)
 
     logger.info(f"Saved {len(rows)} chunks for '{filename}'")
     return len(rows)
@@ -38,23 +37,28 @@ async def search_similar_chunks(
     k: int = 5,
 ) -> list[dict]:
     # Find top-k most similar chunks to the query embedding.
-    pool = await get_pool()
 
     # pgvector's <-> operator = cosine distance
     # 1 - cosine distance = cosine similarity
-    query = """
+    sql = text(
+        """
         SELECT
             filename,
             chunk_index,
             content,
-            1 - (embedding <=> $1::vector) AS similarity
+            1 - (embedding <=> :embedding ::vector) AS similarity
         FROM documents
-        ORDER BY embedding <=> $1::vector
-        LIMIT $2
+        ORDER BY embedding <=> :embedding ::vector
+        LIMIT :k
     """
+    )
 
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(query, str(query_embedding), k)
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            sql,
+            {"embedding": str(query_embedding), "k": k},
+        )
+        rows = result.mappings().all()
 
     return [
         {

@@ -43,14 +43,11 @@ docker volume create chatbot-pgdata
 
 ```bash
 docker run -d `
-  --name chatbotdb `
-  --network chatbot-network `
-  --restart unless-stopped `
-  -e POSTGRES_USER=username `
-  -e POSTGRES_PASSWORD=password `
-  -e POSTGRES_DB=chatbot_db `
-  -p 5432:5432 `
-  -v chatbot-pgdata:/var/lib/postgresql `
-  -v C:\path\to\your\project\init.sql:/docker-entrypoint-initdb.d/init.sql `
-  pgvector/pgvector:0.8.2-pg18-trixie
+>>   --name chatbotdb `
+>>   --network chatbot-network `
+>>   --restart unless-stopped `
+>>   --env-file .env `
+>>   -p 5432:5432 `
+>>   -v chatbot-pgdata:/var/lib/postgresql `
+>>   pgvector/pgvector:0.8.2-pg18-trixie
 ```

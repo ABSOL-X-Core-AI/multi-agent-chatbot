@@ -1,6 +1,6 @@
 import logging
 from app.services.embeddings import embed_query
-from app.services.db_operations import search_similar_chunks
+from app.services.db_services.db_operations import search_similar_chunks
 
 logger = logging.getLogger("uvicorn.error")
 

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.similarity_search import similarity_search
+from fastapi import APIRouter, HTTPException
+from app.services.search.similarity_search import similarity_search
 
 router = APIRouter()
 
