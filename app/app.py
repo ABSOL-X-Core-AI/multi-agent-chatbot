@@ -1,7 +1,8 @@
 import logging
 from fastapi import FastAPI
-from .routes import upload
-from .routes import search
+
+from .routes.user import search
+from .routes.user import upload
 from contextlib import asynccontextmanager
 from .services.database import get_pool, close_pool
 
