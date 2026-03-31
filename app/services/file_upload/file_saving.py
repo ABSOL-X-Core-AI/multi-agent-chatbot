@@ -2,9 +2,14 @@ import uuid
 import logging
 import aiofiles
 from pathlib import Path
-from app.services.file_processor import extract_text, chunk_text, validate_file
 from app.services.embeddings import embed_texts
-from app.services.db_operations import save_document_chunks
+from app.services.file_upload.file_processor import (
+    extract_text,
+    chunk_text,
+    validate_file,
+)
+from app.services.db_services.db_operations import save_document_chunks
+
 
 logger = logging.getLogger("uvicorn.error")
 
