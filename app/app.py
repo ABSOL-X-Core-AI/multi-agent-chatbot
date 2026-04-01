@@ -1,6 +1,7 @@
 import logging
 from fastapi import FastAPI
 from sqlalchemy import text
+from .routes.user import chat
 from .routes.user import search
 from .routes.user import upload
 from contextlib import asynccontextmanager
@@ -31,6 +32,7 @@ app = FastAPI(
 
 app.include_router(upload.router, prefix="/chatbot/v1", tags=["upload"])
 app.include_router(search.router, prefix="/chatbot/v1", tags=["search"])
+app.include_router(chat.router, prefix="/chatbot/v1", tags=["chat"])
 
 
 @app.get("/health", tags=["health"])

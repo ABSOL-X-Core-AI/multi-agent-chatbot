@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy import delete, text
 from app.services.db_services.models import Document
+from app.services.db_services.models import ChatHistory
 from app.services.db_services.database import AsyncSessionLocal
 
 logger = logging.getLogger("uvicorn.error")
@@ -69,3 +70,45 @@ async def search_similar_chunks(
         }
         for row in rows
     ]
+
+
+async def load_chat_history(thread_id: str) -> list[dict]:
+    """
+    Load all messages for a thread, ordered oldest → newest.
+    Returns list of dicts: [{"role": "user", "content": "..."}]
+    """
+
+    async with AsyncSessionLocal() as session:
+        sql = text(
+            """
+            SELECT
+                role, content 
+            FROM chat_history
+            WHERE thread_id = :thread_id
+            ORDER BY created_at ASC
+            """
+        )
+
+        result = await session.execute(
+            sql,
+            {"thread_id": thread_id},
+        )
+
+        rows = result.mappings().all()
+
+    return [{"role": row["role"], "content": row["content"]} for row in rows]
+
+
+async def save_message(thread_id: str, role: str, content: str):
+    """
+    Save a single message to chat history.
+    """
+    async with AsyncSessionLocal() as session:
+        async with session.begin():
+            session.add(
+                ChatHistory(
+                    thread_id=thread_id,
+                    role=role,
+                    content=content,
+                )
+            )

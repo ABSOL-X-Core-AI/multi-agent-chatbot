@@ -27,3 +27,13 @@ class Document(Base):
             postgresql_with={"lists": 100},
         ),
     )
+
+
+class ChatHistory(Base):
+    __tablename__ = "chat_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    thread_id = Column(Text, nullable=False, index=True)
+    role = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
