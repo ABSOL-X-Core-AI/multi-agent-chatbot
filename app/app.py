@@ -6,8 +6,10 @@ from .routes.user import search
 from .routes.user import upload
 from contextlib import asynccontextmanager
 from app.services.db_services.database import engine, create_tables, close_engine
+from langfuse import Langfuse, get_client
 
 logger = logging.getLogger("uvicorn.error")
+langfuse = get_client()
 
 
 @asynccontextmanager
@@ -15,6 +17,12 @@ async def lifespan(app: FastAPI):
 
     await create_tables()
     logger.info("Database tables created/verified")
+
+    langfuse = get_client()
+    if langfuse.auth_check():
+        logger.info("Langfuse connected successfully")
+    else:
+        logger.error("Langfuse connection failed — check your API keys and host")
 
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))

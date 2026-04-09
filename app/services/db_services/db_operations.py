@@ -72,9 +72,9 @@ async def search_similar_chunks(
     ]
 
 
-async def load_chat_history(thread_id: str) -> list[dict]:
+async def load_chat_history(session_id: str, thread_id: str) -> list[dict]:
     """
-    Load all messages for a thread, ordered oldest → newest.
+    Load all messages for a session and thread, ordered oldest → newest.
     Returns list of dicts: [{"role": "user", "content": "..."}]
     """
 
@@ -84,14 +84,15 @@ async def load_chat_history(thread_id: str) -> list[dict]:
             SELECT
                 role, content 
             FROM chat_history
-            WHERE thread_id = :thread_id
+            WHERE session_id = :session_id
+                AND thread_id = :thread_id
             ORDER BY created_at ASC
             """
         )
 
         result = await session.execute(
             sql,
-            {"thread_id": thread_id},
+            {"session_id": session_id, "thread_id": thread_id},
         )
 
         rows = result.mappings().all()
@@ -99,7 +100,7 @@ async def load_chat_history(thread_id: str) -> list[dict]:
     return [{"role": row["role"], "content": row["content"]} for row in rows]
 
 
-async def save_message(thread_id: str, role: str, content: str):
+async def save_message(session_id: str, thread_id: str, role: str, content: str):
     """
     Save a single message to chat history.
     """
@@ -107,6 +108,7 @@ async def save_message(thread_id: str, role: str, content: str):
         async with session.begin():
             session.add(
                 ChatHistory(
+                    session_id=session_id,
                     thread_id=thread_id,
                     role=role,
                     content=content,

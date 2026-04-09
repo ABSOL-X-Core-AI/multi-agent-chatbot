@@ -1,77 +1,3 @@
-# # app/agents/subagents/appointment.py
-# import logging
-# from langchain.agents import create_agent
-# from langchain.tools import tool
-# from ..appointment_agent.tools import (
-#     send_confirmation_email,
-#     check_calendar_availability,
-#     book_appointment,
-# )
-# from agents.llm import get_llm
-
-# logger = logging.getLogger("uvicorn.error")
-
-
-# _llm = get_llm(temperature=0.1)
-
-# APPOINTMENT_PROMPT = """You are an appointment booking specialist.
-# You help users book appointments by checking calendar availability and creating events.
-
-# You have three tools:
-# - check_calendar_availability: check if a time slot is free
-# - book_appointment: create the calendar event and send Google Calendar invite
-# - send_confirmation_email: send a formal confirmation email
-
-# Process to follow STRICTLY in this order:
-# 1. Extract the requested date and time from the user's query
-# 2. Convert it to ISO format (YYYY-MM-DDTHH:MM:SS) — today's date context: use the year 2026
-# 3. Call check_calendar_availability first — NEVER book without checking first
-# 4. If the slot is BUSY: tell the user clearly and suggest checking another time
-# 5. If the slot is AVAILABLE:
-#    a. Call book_appointment
-#    b. Call send_confirmation_email to send a formal confirmation
-#    c. Report success to the user with all details
-
-# Appointment duration: assume 30 minutees unless user specifies otherwise.
-# Timezone: Asia/Colombo (Sri Lanka)
-
-# Important:
-# - Always confirm the exact date, time and attendee with the user before booking
-# - Your final message must include: date, time, confirmation status
-# - The supervisor only sees your last message — make it complete and clear
-# """
-
-# appointment_subagent = create_agent(
-#     model=_llm,
-#     tools=[
-#         check_calendar_availability,
-#         book_appointment,
-#         send_confirmation_email,
-#     ],
-#     system_prompt=APPOINTMENT_PROMPT,
-# )
-
-
-# @tool(
-#     "appointment_agent",
-#     description=(
-#         "Use this when the user wants to book, schedule, or arrange an appointment. "
-#         "This includes: booking meetings, scheduling appointments with departments "
-#         "or offices, checking calendar availability, or any request involving "
-#         "setting up a meeting at a specific date and time. "
-#         "The agent will check availability, book the slot, and send confirmation emails."
-#     ),
-# )
-# async def call_appointment_agent(query: str) -> str:
-#     """Routes appointment requests to the appointment booking subagent."""
-#     logger.info(f"appointment_agent called with: '{query}'")
-#     result = await appointment_subagent.ainvoke(
-#         {"messages": [{"role": "user", "content": query}]}
-#     )
-#     return result["messages"][-1].content
-
-
-# app/agents/subagents/appointment_agent/appointment.py
 import logging
 from langchain.agents import create_agent
 from langchain.tools import tool
@@ -81,6 +7,7 @@ from .tools import (
     book_appointment,
 )
 from agents.llm import get_llm
+
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -152,7 +79,10 @@ appointment_subagent = create_agent(
 async def call_appointment_agent(query: str) -> str:
     """Routes appointment requests to the appointment booking subagent."""
     logger.info(f"appointment_agent called with: '{query}'")
+
     result = await appointment_subagent.ainvoke(
-        {"messages": [{"role": "user", "content": query}]}
+        {"messages": [{"role": "user", "content": query}]},
     )
-    return result["messages"][-1].content
+    reply = result["messages"][-1].content
+
+    return reply

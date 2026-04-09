@@ -4,6 +4,7 @@ from langchain.tools import tool
 from langchain.agents import create_agent
 from app.services.search.similarity_search import similarity_search
 
+
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -61,7 +62,10 @@ document_qa_subagent = create_agent(
 async def call_document_qa_agent(query: str) -> str:
     """Routes document questions to the document QA subagent."""
     logger.info(f"document_qa_agent called with: '{query}'")
+
     result = await document_qa_subagent.ainvoke(
-        {"messages": [{"role": "user", "content": query}]}
+        {"messages": [{"role": "user", "content": query}]},
     )
-    return result["messages"][-1].content
+    reply = result["messages"][-1].content
+
+    return reply

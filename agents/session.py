@@ -1,16 +1,15 @@
 import logging
 from .main_agent import main_agent
-from app.services.db_services.db_operations import (
-    load_chat_history,
-    save_message,
-)
+from app.services.db_services.db_operations import load_chat_history, save_message
 from langchain_core.messages import HumanMessage, AIMessage
+from langfuse.langchain import CallbackHandler
+from langfuse import get_client, observe, propagate_attributes
 
 logger = logging.getLogger("uvicorn.error")
+langfuse = get_client()
 
 
 def _build_messages(history: list[dict]) -> list:
-    """Convert list of dicts from DB into LangChain message objects."""
     messages = []
     for msg in history:
         if msg["role"] == "user":
@@ -20,24 +19,47 @@ def _build_messages(history: list[dict]) -> list:
     return messages
 
 
-async def chat(user_message: str, thread_id: str) -> str:
-    # Load this thread's full history from PostgreSQL
-    history = await load_chat_history(thread_id)
-    logger.info(f"Loaded {len(history)} messages for thread '{thread_id}'")
+@observe(name="chat-session")
+async def chat(user_message: str, session_id: str, thread_id: str) -> str:
 
-    # Build LangChain message list from DB rows
-    messages = _build_messages(history)
+    with propagate_attributes(
+        session_id=session_id,
+        tags=["chat"],
+        metadata={"thread_id": thread_id},
+    ):
+        # Load history
+        history = await load_chat_history(session_id, thread_id)
+        logger.info(
+            f"Loaded {len(history)} messages for session '{session_id}', thread '{thread_id}'"
+        )
 
-    # Append the new user message
-    messages.append(HumanMessage(content=user_message))
+        # Build messages
+        messages = _build_messages(history)
+        messages.append(HumanMessage(content=user_message))
 
-    # Run the agent with full history — it sees all past context
-    result = await main_agent.ainvoke({"messages": messages})
-    reply = result["messages"][-1].content
+        # Callback handler — auto-traces all LLM calls and tool calls
+        langfuse_handler = CallbackHandler()
 
-    # Persist both the user message and reply to PostgreSQL
-    await save_message(thread_id=thread_id, role="user", content=user_message)
-    await save_message(thread_id=thread_id, role="assistant", content=reply)
+        # Run agent
+        result = await main_agent.ainvoke(
+            {"messages": messages},
+            config={"callbacks": [langfuse_handler]},
+        )
+        reply = result["messages"][-1].content
 
-    logger.info(f"Saved 2 messages for thread '{thread_id}'")
-    return reply
+        # Save to DB
+        await save_message(
+            session_id=session_id,
+            thread_id=thread_id,
+            role="user",
+            content=user_message,
+        )
+        await save_message(
+            session_id=session_id,
+            thread_id=thread_id,
+            role="assistant",
+            content=reply,
+        )
+
+        logger.info(f"Saved messages for session '{session_id}', thread '{thread_id}'")
+        return reply

@@ -129,43 +129,6 @@ def book_appointment(
         return f"error: Could not book appointment — {str(e)}"
 
 
-# @tool
-# def send_confirmation_email(
-#     to_email: str,
-#     subject: str,
-#     body: str,
-# ) -> str:
-#     """
-#     Send a confirmation email about the appointment.
-#     Use this AFTER booking to send a formal confirmation email.
-
-#     Args:
-#         to_email: Recipient email address
-#         subject:  Email subject line
-#         body:     Email body text (plain text)
-
-#     Returns:
-#         Confirmation that email was sent.
-#     """
-#     try:
-#         msg = MIMEMultipart()
-#         msg["From"] = SENDER_EMAIL
-#         msg["To"] = to_email
-#         msg["Subject"] = subject
-#         msg.attach(MIMEText(body, "plain"))
-
-#         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-#             server.login(SENDER_EMAIL, EMAIL_PASSWORD)
-#             server.send_message(msg)
-
-#         logger.info(f"Confirmation email sent to {to_email}")
-#         return f"success: Confirmation email sent to {to_email}"
-
-#     except Exception as e:
-#         logger.error(f"Email sending failed: {e}")
-#         return f"error: Could not send email — {str(e)}"
-
-
 @tool
 def send_confirmation_email(
     appointment_title: str,
