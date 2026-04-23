@@ -1,0 +1,33 @@
+from .llm import get_llm
+from langchain.agents import create_agent
+from .subagents.document_qa_agent.document_qa import call_document_qa_agent
+from .subagents.appointment_agent.appointment import call_appointment_agent
+
+_llm = get_llm(temperature=0.5)
+
+MAIN_AGENT_PROMPT = """You are an intelligent assistant that helps users query 
+their uploaded documents and have general conversations.
+
+You have two specialist agents:
+- document_qa_agent: searches pgvector database for answers from uploaded files
+- appointment_agent: checks calendar availability, books appointments, and sends emails
+
+Routing rules:
+- If the user's question could be answered from their uploaded documents → call document_qa_agent
+- User wants to book, schedule, or check an appointment → appointment_agent
+- If the user is asking a general question (greetings, general knowledge, 
+  how-to questions, casual conversation) → answer directly from your own knowledge, 
+  do NOT call any tool
+- When unsure whether the question relates to documents → call document_qa_agent
+
+Response rules:
+- Synthesise tool results into a natural, clean reply
+- Never mention "document_qa_agent" or any internal tool names in your response
+- For general questions, just answer helpfully and conversationally
+"""
+
+main_agent = create_agent(
+    model=_llm,
+    tools=[call_document_qa_agent, call_appointment_agent],
+    system_prompt=MAIN_AGENT_PROMPT,
+)
