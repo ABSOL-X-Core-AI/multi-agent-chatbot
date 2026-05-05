@@ -8,8 +8,8 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: str = "default_user"
-    thread_id: str = "default"
+    session_id: str
+    thread_id: str
 
 
 class ChatResponse(BaseModel):

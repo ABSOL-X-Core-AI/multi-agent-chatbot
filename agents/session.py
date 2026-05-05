@@ -1,9 +1,15 @@
 import logging
 from .main_agent import main_agent
-from app.services.db_services.db_operations import load_chat_history, save_message
 from langchain_core.messages import HumanMessage, AIMessage
 from langfuse.langchain import CallbackHandler
 from langfuse import get_client, observe, propagate_attributes
+from .utils import generate_title
+from app.services.db_services.chat_operations import (
+    update_title,
+    load_chat_history,
+    save_message,
+)
+
 
 logger = logging.getLogger("uvicorn.error")
 langfuse = get_client()
@@ -28,7 +34,9 @@ async def chat(user_message: str, session_id: str, thread_id: str) -> str:
         metadata={"thread_id": thread_id},
     ):
         # Load history
-        history = await load_chat_history(session_id, thread_id)
+        history = await load_chat_history(thread_id)
+        is_first_message = len(history) == 0
+
         logger.info(
             f"Loaded {len(history)} messages for session '{session_id}', thread '{thread_id}'"
         )
@@ -60,6 +68,11 @@ async def chat(user_message: str, session_id: str, thread_id: str) -> str:
             role="assistant",
             content=reply,
         )
+
+        if is_first_message:
+            title = await generate_title(user_message)
+            await update_title(thread_id, title)
+            logger.info(f"Auto-titled thread '{thread_id}': {title}")
 
         logger.info(f"Saved messages for session '{session_id}', thread '{thread_id}'")
         return reply

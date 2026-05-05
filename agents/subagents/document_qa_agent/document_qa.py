@@ -30,7 +30,7 @@ async def search_documents(query: str) -> str:
 
 _llm = get_llm(temperature=0.2)
 
-DOCUMENT_QA_PROMPT = """"  You are a document question-answering specialist. 
+DOCUMENT_QA_AGENT_PROMPT = """"  You are a document question-answering specialist. 
     You have access to a pgvector similarity search over the user's uploaded documents.
 
         Rules:
@@ -45,7 +45,7 @@ DOCUMENT_QA_PROMPT = """"  You are a document question-answering specialist.
 document_qa_subagent = create_agent(
     model=_llm,
     tools=[search_documents],
-    system_prompt=DOCUMENT_QA_PROMPT,
+    system_prompt=DOCUMENT_QA_AGENT_PROMPT,
 )
 
 
