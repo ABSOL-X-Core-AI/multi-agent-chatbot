@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from agents.session import chat
 from fastapi import APIRouter, HTTPException
 
-
 router = APIRouter()
 
 

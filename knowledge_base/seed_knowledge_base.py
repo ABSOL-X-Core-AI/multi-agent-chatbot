@@ -1,10 +1,11 @@
-# scripts/seed_knowledge_base.py
-
-import asyncio
 import logging
 from pathlib import Path
 from app.services.embeddings import embed_texts
-from app.services.file_upload.file_processor import extract_text, chunk_text, validate_file
+from app.services.file_upload.file_processor import (
+    extract_text,
+    chunk_text,
+    validate_file,
+)
 from app.services.db_services.db_operations import save_document_chunks
 from app.services.db_services.database import create_tables
 
@@ -57,7 +58,9 @@ async def seed_all():
     await create_tables()
 
     if not KNOWLEDGE_BASE_DIR.exists():
-        logger.error(f"Folder '{KNOWLEDGE_BASE_DIR}' does not exist. Create it and add your files.")
+        logger.error(
+            f"Folder '{KNOWLEDGE_BASE_DIR}' does not exist. Create it and add your files."
+        )
         return
 
     files = list(KNOWLEDGE_BASE_DIR.iterdir())
