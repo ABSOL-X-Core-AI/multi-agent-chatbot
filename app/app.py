@@ -2,11 +2,13 @@ import logging
 from fastapi import FastAPI
 from sqlalchemy import text
 from .routes.user import chat
+from .routes.user import session
 from .routes.user import search
 from .routes.user import upload
 from contextlib import asynccontextmanager
 from app.services.db_services.database import engine, create_tables, close_engine
 from langfuse import Langfuse, get_client
+from knowledge_base.seed_knowledge_base import seed_all
 
 logger = logging.getLogger("uvicorn.error")
 langfuse = get_client()
@@ -17,6 +19,9 @@ async def lifespan(app: FastAPI):
 
     await create_tables()
     logger.info("Database tables created/verified")
+
+    await seed_all()
+    logger.info("Knowledge base seeded")
 
     langfuse = get_client()
     if langfuse.auth_check():
@@ -41,6 +46,7 @@ app = FastAPI(
 app.include_router(upload.router, prefix="/chatbot/v1", tags=["upload"])
 app.include_router(search.router, prefix="/chatbot/v1", tags=["search"])
 app.include_router(chat.router, prefix="/chatbot/v1", tags=["chat"])
+app.include_router(session.router, prefix="/chatbot/v1", tags=["sessions"])
 
 
 @app.get("/health", tags=["health"])

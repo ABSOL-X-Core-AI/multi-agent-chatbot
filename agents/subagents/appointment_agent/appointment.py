@@ -13,7 +13,7 @@ logger = logging.getLogger("uvicorn.error")
 
 _llm = get_llm(temperature=0.1)
 
-APPOINTMENT_PROMPT = """You are an appointment booking specialist.
+APPOINTMENT_AGENT_PROMPT = """You are an appointment booking specialist.
 You help users schedule appointments by checking calendar availability and creating events.
 
 You have three tools:
@@ -62,7 +62,7 @@ appointment_subagent = create_agent(
         book_appointment,
         send_confirmation_email,
     ],
-    system_prompt=APPOINTMENT_PROMPT,
+    system_prompt=APPOINTMENT_AGENT_PROMPT,
 )
 
 
